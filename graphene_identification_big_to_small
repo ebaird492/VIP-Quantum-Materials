@@ -1,0 +1,49 @@
+% Read the image file
+img = imread('test_graphene.jpg');
+
+% Convert the image to grayscale if it is not already
+if size(img, 3) == 3
+    grayImg = rgb2gray(img);
+else
+    grayImg = img;
+end
+
+% Use a threshold to create a binary image, assuming graphene flakes are darker
+thresh = graythresh(grayImg);
+binaryImg = imbinarize(grayImg, thresh);
+
+% Clear border flakes and fill holes to improve flake identification
+binaryImg = imclearborder(binaryImg);
+binaryImg = imfill(binaryImg, 'holes');
+
+% Label the connected components (graphene flakes)
+[labeledImg, numFlakes] = bwlabel(binaryImg);
+
+% Measure properties of connected components
+stats = regionprops(labeledImg, 'Area', 'BoundingBox');
+
+% Sort the flakes by area in descending order
+[sortedAreas, sortedIndices] = sort([stats.Area], 'descend');
+
+% Display the image
+imshow(img);
+hold on;
+
+% Plot bounding boxes around each flake in descending order of size
+for i = 1:numFlakes
+    % Get the bounding box for the i-th largest flake
+    boundingBox = stats(sortedIndices(i)).BoundingBox;
+    
+    % Draw a rectangle around the flake
+    rectangle('Position', boundingBox, 'EdgeColor', [1 0 0], 'LineWidth', 2);
+    
+    % You can also annotate the flakes with their rank order
+    text(boundingBox(1), boundingBox(2), num2str(i), ...
+         'Color', 'yellow', 'FontSize', 8, 'FontWeight', 'bold');
+end
+
+hold off;
+
+% Optionally, save the annotated image to a file
+outputFilename = 'annotated_image.png';
+saveas(gcf, outputFilename);
