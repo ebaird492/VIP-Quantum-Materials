@@ -1,33 +1,45 @@
-import numpy as np
 import cv2
-import warnings
-warnings.filterwarnings("ignore")
+import numpy as np
+import matplotlib.pyplot as plt
 
-li = list()
-y = np.linspace(0, 8, 9)
+# Load the image
+image_path = '5.jpg'
+image = cv2.imread(image_path)
+gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-for i in range(22, 31):
-    img_path = f"testimage/I{i}.jpg"
-    li.append(cv2.imread(img_path)[:,:,2])
+# Apply Gaussian blur
+blurred = cv2.GaussianBlur(gray_image, (5, 5), 0)
 
-n_li = [[list(pair) for pair in zip(*sublist)] for sublist in zip(*li)]
-dim1 = len(n_li)
-dim2 = len(n_li[0])
-fin_li = []
-for i in range(dim1):
-    sub_li = []
-    for j in range(dim2):
-        try:
-            slope, _ = np.polyfit(n_li[i][j], y , 1)
-            if slope < 0:
-                sub_li.append(0)
-                continue
-            sub_li.append(slope)
-        except:
-            sub_li.append(0)
-    fin_li.append(sub_li)
+# Threshold the image to get a binary image
+_, binary_image = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-fin_li = np.array(fin_li)
-cv2.imshow("img", fin_li)
-cv2.imwrite("fin_image.png", fin_li)
-cv2.waitKey(0)
+# Find contours
+contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Sort the contours by area and get the ten largest
+contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
+
+# Calculate the mean intensity (thickness) for each flake
+intensities = []
+for contour in contours:
+    mask = np.zeros_like(gray_image) # Create a mask for each contour
+    cv2.drawContours(mask, [contour], -1, color=255, thickness=cv2.FILLED)
+    mean_intensity = cv2.mean(gray_image, mask=mask)[0] # Calculate mean intensity within the contour
+    intensities.append((contour, mean_intensity))
+
+# Sort the list by intensity (assuming higher intensity means thicker)
+intensities = sorted(intensities, key=lambda x: x[1])
+
+# Annotate the ten biggest flakes from thinnest to thickest
+for i, (contour, intensity) in enumerate(intensities):
+    cv2.drawContours(image, [contour], -1, (0, 255, 0), 3)
+    cv2.putText(image, f'{i+1}', tuple(contour[0][0]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+# Save the annotated image
+cv2.imwrite('annotated_9.jpg', image)
+
+# Optionally, display the image
+plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+plt.title('Annotated Graphene Flakes')
+plt.show()
+
