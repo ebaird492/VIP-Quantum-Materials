@@ -21,9 +21,9 @@ STEPS = 200 # steps for 1 revolution
 DELAY = 50 / 10 ** 6 # num of micro-sec delay to adjust speed
 
 # Motor 1 setup
-PUL_PIN1 = board.get_pin('d:5:o')
-DIR_PIN1 = board.get_pin('d:2:o')
-EN_PIN1 = board.get_pin('d:8:o')
+PUL_PIN1 = board.get_pin('d:5:o') # PUL+
+DIR_PIN1 = board.get_pin('d:2:o') # DIR+
+EN_PIN1 = board.get_pin('d:8:o') # EN+
 M1 = {"PUL": PUL_PIN1, "DIR": DIR_PIN1, "EN": EN_PIN1}
 
 # infinite revolution test
